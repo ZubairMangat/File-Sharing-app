@@ -1,11 +1,12 @@
 import socket
 import streamlit as st
+import os
 
 # Function to send a file
 def send_file(file, receiver_ip, port):
     try:
         client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        client_socket.connect((receiver_ip, port))  # Connect to server
+        client_socket.connect((receiver_ip, port))  # Connect to the receiver
 
         with open(file, "rb") as f:
             while True:
@@ -25,14 +26,14 @@ def receive_file_server(port):
     try:
         server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-        # Bind to any available port
+        # Bind to the port and listen
         server_socket.bind(("0.0.0.0", port))
         server_socket.listen(1)
 
         conn, addr = server_socket.accept()
         st.info(f"Connected to {addr}")
 
-        # Specify the filename for the received file
+        # Save the received file with the original extension
         received_file_path = "received_file"
         with open(received_file_path, "wb") as file:
             while True:
@@ -43,18 +44,22 @@ def receive_file_server(port):
 
         st.success("File received successfully!")
 
-        # Provide download option
+        # Provide download option for the file
         with open(received_file_path, "rb") as file:
             file_data = file.read()
             st.download_button(
                 label="Download Received File",
                 data=file_data,
-                file_name="received_file",  # Customize file name if needed
+                file_name="received_file",  # Adjust the name and extension dynamically if needed
                 mime="application/octet-stream"
             )
 
         conn.close()
         server_socket.close()
+
+        # Clean up temporary file after download
+        if os.path.exists(received_file_path):
+            os.remove(received_file_path)
 
     except OSError as e:
         if e.errno == 98:  # Address already in use
@@ -117,6 +122,10 @@ def main():
 
                 # Send the file
                 send_file(temp_file_path, receiver_ip, port)
+
+                # Clean up temporary file
+                if os.path.exists(temp_file_path):
+                    os.remove(temp_file_path)
             else:
                 st.error("Please select a file and enter a valid IP address.")
 
