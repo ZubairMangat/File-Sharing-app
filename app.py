@@ -29,7 +29,10 @@ def receive_file_server(port):
 
         conn, addr = server_socket.accept()
         st.info(f"Connected to {addr}")
-        with open("received_file.jpg", "wb") as file:
+        
+        # Specify the filename for the received file
+        received_file_path = "received_file"
+        with open(received_file_path, "wb") as file:
             while True:
                 data = conn.recv(1024)
                 if not data:
@@ -37,6 +40,17 @@ def receive_file_server(port):
                 file.write(data)
 
         st.success("File received successfully!")
+
+        # Provide download option
+        with open(received_file_path, "rb") as file:
+            file_data = file.read()
+            st.download_button(
+                label="Download Received File",
+                data=file_data,
+                file_name="received_file",  # You can customize the default name
+                mime="application/octet-stream"
+            )
+
         conn.close()
         server_socket.close()
 
