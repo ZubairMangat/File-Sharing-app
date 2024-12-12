@@ -24,12 +24,14 @@ def send_file(file, receiver_ip, port):
 def receive_file_server(port):
     try:
         server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+        # Bind to any available port
         server_socket.bind(("0.0.0.0", port))
         server_socket.listen(1)
 
         conn, addr = server_socket.accept()
         st.info(f"Connected to {addr}")
-        
+
         # Specify the filename for the received file
         received_file_path = "received_file"
         with open(received_file_path, "wb") as file:
@@ -47,13 +49,18 @@ def receive_file_server(port):
             st.download_button(
                 label="Download Received File",
                 data=file_data,
-                file_name="received_file",  # You can customize the default name
+                file_name="received_file",  # Customize file name if needed
                 mime="application/octet-stream"
             )
 
         conn.close()
         server_socket.close()
 
+    except OSError as e:
+        if e.errno == 98:  # Address already in use
+            st.error(f"Port {port} is already in use. Please try another port.")
+        else:
+            st.error(f"Error: {str(e)}")
     except Exception as e:
         st.error(f"Error: {str(e)}")
 
